@@ -1,4 +1,4 @@
-#!/usr/bin/Rscript
+#!/usr/bin/env Rscript
 
 # visualizations of simple quantitative / evolutionary genetics simulations
 # (for teaching)

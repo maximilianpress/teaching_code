@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 Maximilian Press
-copyright (c) 2020
+copyright (C) 2020
 
 This is a very simple mapper that takes:
 
@@ -44,6 +44,7 @@ def rev_comp(seq):
     return seq.translate(TAB)[::-1]
 
 def seq_to_pat(seq):
+    """Make a seq consisting of ACGTN into a regex pattern."""
     seq = seq.upper()
     ambig = 0
     seq_pat = ''
@@ -58,9 +59,11 @@ def seq_to_pat(seq):
     return re.compile(seq_pat)
 
 def format_line(match_dict_entry):
+    """Given a match dict entry, make it into a tab-delim line for writing to file."""
     return "{query}\t{ref}\t{start}\t{end}\t{orientation}\t{match_seq}".format(**match_dict_entry)
 
 def print_results(match_dict):
+    """Print any results in a match dict"""
     print("query\tref\tmatch_start\tmatch_end\torientation\tmatch_seq")
     for query in match_dict:
         # query is a list of dicts now
@@ -68,6 +71,10 @@ def print_results(match_dict):
             print(format_line(match))
 
 def find_exact_matches(query_seq_file, ref_seq_file):
+    """Iterate over a query seq file, finding exact matches in the ref seq file for each query.
+
+    Arguments are the file names.
+    """
     match_dict = defaultdict(lambda: list())
     queries = SeqIO.parse(open(query_seq_file), "fasta")
     for query in queries:

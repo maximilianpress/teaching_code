@@ -3,6 +3,17 @@
 Maximilian Press
 copyright (c) 2020
 
+This is a very simple mapper that takes:
+
+1) multifasta of query sequences
+2) multifasta of reference sequences
+
+and attempts to find exact matches (allowing Ns) of the queries in the references.
+
+Probably very slow for many queries/large references!!!
+
+------
+
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or

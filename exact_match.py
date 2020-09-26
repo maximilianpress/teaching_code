@@ -1,19 +1,13 @@
 #!/usr/bin/env python
 """
-maximilianpress
-9/26/20
-Bioinformatics Engineer, Phase Genomics
+Maximilian Press
 
-/path/to/exact_match.py
+# this script is 
+# free software under the GNU General Public License (GPL). That 
+# is, you can do whatever you want with it,
+# so long as you don't sell or copyright it.  
+# https://www.gnu.org/licenses/gpl-3.0.en.html
 
-{description}
-
-Copyright 2019, Phase Genomics Inc. All rights reserved.
-
-The contents of this file are proprietary and private and are not intended for
-distribution or use by any person or entity except Phase Genomics. You may not
-use, modify, or distribute it in any fashion. You may not copy this file. You
-may not describe the contents of this file to any other party.
 """
 import sys
 import re

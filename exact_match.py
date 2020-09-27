@@ -28,11 +28,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
+from __future__ import print_function
 import sys
 import re
 from Bio import SeqIO
 from collections import defaultdict
 
+USAGE = "\nexact_match.py <REFERENCE_FASTA> <QUERY_FASTA>\n"
 TAB = str.maketrans("ACGTN", "TGCAN")
 
 def rev_comp(seq):
@@ -70,10 +72,10 @@ def print_results(match_dict):
         for match in match_dict[query]:
             print(format_line(match))
 
-def find_exact_matches(query_seq_file, ref_seq_file):
+def find_exact_matches(query_seq_file, ref_seq_file, should_rc=True):
     """Iterate over a query seq file, finding exact matches in the ref seq file for each query.
 
-    Arguments are the file names.
+    Arguments are the file paths, and a bool for whether reverse complement should be considered.
     """
     match_dict = defaultdict(lambda: list())
     queries = SeqIO.parse(open(query_seq_file), "fasta")
@@ -101,23 +103,30 @@ def find_exact_matches(query_seq_file, ref_seq_file):
                 )
 
             for match in rc_iter:
-                match_dict[query.id].append(
-                    {
-                        "query": query.id,
-                        "ref": seq.id,
-                        "start": match.span()[0],
-                        "end": match.span()[1],
-                        "orientation": "-",
-                        "match_seq": rev_comp(ref_str[match.span()])
-                    }
+                if should_rc:
+                    match_dict[query.id].append(
+                        {
+                            "query": query.id,
+                            "ref": seq.id,
+                            "start": match.span()[0],
+                            "end": match.span()[1],
+                            "orientation": "-",
+                            "match_seq": rev_comp(ref_str[match.span()])
+                        }
                 )
         ref.close()
     return match_dict
 
 def main():
+    if len(sys.argv) != 3:
+        print(USAGE)
+        sys.exit()
+
     ref_seq_file = sys.argv[1]
     query_seq_file = sys.argv[2]
-    match_dict = find_exact_matches(query_seq_file=query_seq_file, ref_seq_file=ref_seq_file)
+    match_dict = find_exact_matches(query_seq_file=query_seq_file,
+                                    ref_seq_file=ref_seq_file,
+                                    should_rc=True)
     #print(match_dict)
     print_results(match_dict)
 

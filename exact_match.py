@@ -72,49 +72,59 @@ def print_results(match_dict):
         for match in match_dict[query]:
             print(format_line(match))
 
+def find_pats(ref_str, query_str, query_id, seq_id, match_dict, orientation="+"):
+    """Mutates match_dict with any matches of the query
+
+    Args:
+        ref_str (str): string of a reference sequence
+        query_str (str): string of a query sequence
+        query_id (str): id of the query seq
+        seq_id (str): id of the reference seq
+        match_dict (defaultdict(str: [dict])): a dict of matches, to be MUTATED
+        orientation (str): "+" or "-", namely whether the query is reverse complemented or not.
+
+    """
+    query_pat = seq_to_pat(query_str)
+    print(query_pat)
+    query_iter = query_pat.finditer(ref_str)
+    for match in query_iter:
+        print(match.span())
+        coords = match.span()
+        match_dict[query_id].append(
+            {
+             "query" : query_id,
+             "ref" : seq_id,
+             "start" : coords[0],
+             "end" : coords[1],
+             "orientation" : orientation,
+             "match_seq": ref_str[int(coords[0]):int(coords[1])]
+             }
+        )
+
 def find_exact_matches(query_seq_file, ref_seq_file, should_rc=True):
     """Iterate over a query seq file, finding exact matches in the ref seq file for each query.
 
     Arguments are the file paths, and a bool for whether reverse complement should be considered.
     """
     match_dict = defaultdict(lambda: list())
-    queries = SeqIO.parse(open(query_seq_file), "fasta")
-    for query in queries:
-        query_str = str(query.seq)
-        rc = rev_comp(query_str)
-        query_pat = seq_to_pat(query_str)
-        rc_pat = seq_to_pat(rc)
-        ref = SeqIO.parse(ref_seq_file, "fasta")
-        for seq in ref:
-            ref_str = str(seq.seq)
-            query_iter = query_pat.finditer(ref_str)
-            rc_iter = rc_pat.finditer(ref_str)
-            for match in query_iter:
-                coords = match.span()
-                match_dict[query.id].append(
-                    {
-                        "query" : query.id,
-                        "ref" : seq.id,
-                        "start" : coords[0],
-                        "end" : coords[1],
-                        "orientation" : "+",
-                        "match_seq": ref_str[int(coords[0]):int(coords[1])]
-                    }
-                )
+    ref = SeqIO.parse(ref_seq_file, "fasta")
+    for seq in ref:
+        ref_str = str(seq.seq)
+        query_handle = open(query_seq_file)
+        queries = SeqIO.parse(query_handle, "fasta")
+        print(seq.id)
+        for query in queries:
 
-            for match in rc_iter:
-                if should_rc:
-                    match_dict[query.id].append(
-                        {
-                            "query": query.id,
-                            "ref": seq.id,
-                            "start": match.span()[0],
-                            "end": match.span()[1],
-                            "orientation": "-",
-                            "match_seq": rev_comp(ref_str[match.span()])
-                        }
-                )
-        ref.close()
+            query_str = str(query.seq)
+            find_pats(ref_str=ref_str, query_str=query_str, query_id=query.id, seq_id=seq.id,
+                      match_dict=match_dict)
+            if should_rc:
+                rc = rev_comp(query_str)
+                find_pats(ref_str=ref_str, query_str=rc, query_id=query.id, seq_id=seq.id,
+                          match_dict=match_dict, orientation="-")
+        query_handle.close()
+
+    ref.close()
     return match_dict
 
 def main():

@@ -85,10 +85,8 @@ def find_pats(ref_str, query_str, query_id, seq_id, match_dict, orientation="+")
 
     """
     query_pat = seq_to_pat(query_str)
-    print(query_pat)
     query_iter = query_pat.finditer(ref_str)
     for match in query_iter:
-        print(match.span())
         coords = match.span()
         match_dict[query_id].append(
             {
@@ -112,7 +110,7 @@ def find_exact_matches(query_seq_file, ref_seq_file, should_rc=True):
         ref_str = str(seq.seq)
         query_handle = open(query_seq_file)
         queries = SeqIO.parse(query_handle, "fasta")
-        print(seq.id)
+        print("searching for matches in", seq.id)
         for query in queries:
 
             query_str = str(query.seq)
@@ -137,7 +135,6 @@ def main():
     match_dict = find_exact_matches(query_seq_file=query_seq_file,
                                     ref_seq_file=ref_seq_file,
                                     should_rc=True)
-    #print(match_dict)
     print_results(match_dict)
 
 if __name__ == "__main__":

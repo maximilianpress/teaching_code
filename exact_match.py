@@ -107,13 +107,13 @@ def find_exact_matches(query_seq_file, ref_seq_file, should_rc=True):
     match_dict = defaultdict(lambda: list())
     ref = SeqIO.parse(ref_seq_file, "fasta")
     for seq in ref:
-        ref_str = str(seq.seq)
+        ref_str = str(seq.seq).upper()
         query_handle = open(query_seq_file)
         queries = SeqIO.parse(query_handle, "fasta")
         print("searching for matches in", seq.id)
         for query in queries:
 
-            query_str = str(query.seq)
+            query_str = str(query.seq).upper()
             find_pats(ref_str=ref_str, query_str=query_str, query_id=query.id, seq_id=seq.id,
                       match_dict=match_dict)
             if should_rc:

@@ -31,7 +31,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from __future__ import print_function
 import sys
 import re
+import gzip
 from Bio import SeqIO
+from contextlib import contextmanager
 from collections import defaultdict
 
 USAGE = "\nexact_match.py <REFERENCE_FASTA> <QUERY_FASTA>\n"
@@ -55,7 +57,7 @@ def seq_to_pat(seq):
             ambig += 1
             continue
         elif nt != "N" and ambig > 0:
-            seq_pat += "[ACGT]{" + str(ambig) + '}'
+            seq_pat += "[ACGTN]{" + str(ambig) + '}'
             ambig = 0
         seq_pat += nt
     return re.compile(seq_pat)
@@ -99,6 +101,47 @@ def find_pats(ref_str, query_str, query_id, seq_id, match_dict, orientation="+")
              }
         )
 
+@contextmanager
+def open_seq_file(query_seq_file):
+    """Figure out GZ status of file, return a Biopython SeqIO.parse iterator over records.
+    Separate function to allow context management of opening.
+
+    Args:
+        query_seq_file (str): handle of the sequence file.
+
+    Returns:
+        filehandle: a successfully opened file.
+    """
+    if query_seq_file.endswith("gz"):
+        handle = gzip.open(query_seq_file, "rt")
+    else:
+        handle = open(query_seq_file, "r")
+    try:
+        yield handle
+    finally:
+        handle.close()
+
+def parse_seq_file(query_seq_file, query_handle):
+    """figure out FASTA/Q format and use appropriate SeqIO parser.
+
+    Args:
+        query_seq_file (str): handle of the sequence file (for determining filename ending).
+        query_handle (str): the actual file handle to read
+
+    Returns:
+        iterator over SeqRecords, as from SeqIO.parse
+    """
+    non_gz = query_seq_file.replace(".gz", "")
+    if non_gz.endswith("fa") or non_gz.endswith("fasta"):
+        seq_iter = SeqIO.parse(query_handle, "fasta")
+    elif non_gz.endswith("fq") or non_gz.endswith("fastq"):
+        seq_iter = SeqIO.parse(query_handle, "fastq")
+    else:
+        e = ValueError("{} not a recognized input file format!! File ending must be one of:\n"
+                       ".fa, .fasta, .fq, .fastq (.gz ok)")
+        raise e
+    return seq_iter
+
 def find_exact_matches(query_seq_file, ref_seq_file, should_rc=True):
     """Iterate over a query seq file, finding exact matches in the ref seq file for each query.
 
@@ -108,19 +151,18 @@ def find_exact_matches(query_seq_file, ref_seq_file, should_rc=True):
     ref = SeqIO.parse(ref_seq_file, "fasta")
     for seq in ref:
         ref_str = str(seq.seq).upper()
-        query_handle = open(query_seq_file)
-        queries = SeqIO.parse(query_handle, "fasta")
-        print("searching for matches in", seq.id)
-        for query in queries:
-
-            query_str = str(query.seq).upper()
-            find_pats(ref_str=ref_str, query_str=query_str, query_id=query.id, seq_id=seq.id,
-                      match_dict=match_dict)
-            if should_rc:
-                rc = rev_comp(query_str)
-                find_pats(ref_str=ref_str, query_str=rc, query_id=query.id, seq_id=seq.id,
-                          match_dict=match_dict, orientation="-")
-        query_handle.close()
+        with open_seq_file(query_seq_file) as query_handle:
+            queries = parse_seq_file(query_seq_file=query_seq_file, query_handle=query_handle)
+            print("searching for matches in", seq.id)
+            for query in queries:
+                query_str = str(query.seq).upper()
+                # note that find_pats() mutates match_dict
+                find_pats(ref_str=ref_str, query_str=query_str, query_id=query.id, seq_id=seq.id,
+                          match_dict=match_dict)
+                if should_rc:
+                    rc = rev_comp(query_str)
+                    find_pats(ref_str=ref_str, query_str=rc, query_id=query.id, seq_id=seq.id,
+                              match_dict=match_dict, orientation="-")
 
     ref.close()
     return match_dict

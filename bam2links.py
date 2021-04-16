@@ -11,11 +11,11 @@ def parse_args():
     parser.add_argument('--bam_file', '-b', type=str, required=True,
                         help='Path to the BAM file(s) to parse. (comma-separated if multiple)')
     parser.add_argument('--out_file', '-o', required=True, type=str, default='counts.tsv',
-                        help='Pat of file to write, a TSV of format <contig> <contig> <link_count>. Default: counts.tsv')
-    parser.add_argument('--out_fmt', '-f', required=False, type=str, default="counts",
-                        help='Format of file to write. Default: counts (contigname1 contigname2 '
-                             'counts). others: index_counts (index1 index2 counts) npy (NYI), matrix '
-                             '(NYI), juicer.')
+                        help='Path of file to write, a TSV of format <contig> <contig> <link_count>. Default: counts.tsv')
+    parser.add_argument('--out_fmt', '-f', required=False, type=str, default="juicer",
+                        help='Format of file to write. Default: juicer (short format). '
+                             'others: counts (contigname1 contigname2 counts), '
+                             'index_counts (index1 index2 counts) npy (NYI), matrix (NYI).')
     parser.add_argument('--mapq_filter', '-q', required=False, type=int, default=0)
     args = parser.parse_args()
     return vars(args)
@@ -104,7 +104,7 @@ def parse_bam_to_link_counts(bamfiles, out_fmt="counts", mapq_filter=0):
                   " set in BAM (e.g. by samblaster)")
 
     return net, ref_lens
-    
+
 def write_net_as_counts(net, outfile):
     '''Write out all those counts from the net dict of defaultdicts to a file.'''
     print("writing output to {0}".format(outfile))

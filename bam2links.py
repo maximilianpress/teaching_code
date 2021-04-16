@@ -52,12 +52,17 @@ def parse_bam_to_link_counts(bamfiles, out_fmt="counts", mapq_filter=0):
         refs = bam.references
         lengths = bam.lengths
         ref_lens = {}
+        ref1 = None
+        ref2 = None
         mate = ''
+        juicer_line = "dummy_entry"
         for read in bam:
+            num += 1
             if is_first_read:
-                num += 1
                 is_first_read = False
                 read1_id = read.query_name
+                # note that this does not account for mapq of mate read, which appears to be
+                # non-trivial to access in pysam (?). So adding iff mate also passes (below).
                 if read.is_duplicate or read.mapping_quality < mapq_filter:
                     num_filtered += 1
                     continue
@@ -66,12 +71,10 @@ def parse_bam_to_link_counts(bamfiles, out_fmt="counts", mapq_filter=0):
                 ref_lens[ref1] = lengths[read.reference_id]
                 ref2 = refs[read.next_reference_id]
                 ref_lens[ref2] = lengths[read.next_reference_id]
-                net[ref1][ref2] += 1
-                net[ref2][ref1] += 1
                 if is_juicer:
                     # juicer short format is as follows:
                     # <str1> <chr1> <pos1> <frag1> <str2> <chr2> <pos2> <frag2>
-                    line = "\t".join(
+                    juicer_line = "\t".join(
                                      ["0" if not read.is_reverse else "1",  # strand
                                      ref1,
                                      str(read.reference_start),
@@ -81,10 +84,9 @@ def parse_bam_to_link_counts(bamfiles, out_fmt="counts", mapq_filter=0):
                                      str(read.next_reference_start),
                                      "1"]  # frag2
                                      )
-                    print(line)
 
                 if not is_juicer and num % 10000000 == 0:
-                    print("parsed {0} read pairs from file {1}, {2} filtered out".format(
+                    print("parsed {0} reads from file {1}, {2} filtered out".format(
                           num, bamfile, num_dupes)
                           )
 
@@ -96,13 +98,23 @@ def parse_bam_to_link_counts(bamfiles, out_fmt="counts", mapq_filter=0):
                 if read.query_name != read1_id or mate != [read.reference_start, read.reference_id]:
                     raise RuntimeError("BAM file is not sorted by read name!! (samtools sort -n). Alternately, filtering may have removed reads rather than read pairs?")
 
+                # duplicating filter for forward read
+                if read.is_duplicate or read.mapping_quality < mapq_filter:
+                    num_filtered += 1
+                    continue
+
+                # if BOTH reads pass the filter, then increment/print appropriately
+                net[ref1][ref2] += 1
+                net[ref2][ref1] += 1
+                if is_juicer:
+                    print(juicer_line)
+
     if not is_juicer:
-        print("parsed {0} read pairs from file {1}, filtered out {2} on dupes and mapq".format(
+        print("parsed {0} reads from file {1}, filtered out {2} on dupes and mapq".format(
               num, bamfile, num_filtered))
         if num_filtered == 0:
             print("number of filtered reads is zero- this may be because the duplicates flag was not"
                   " set in BAM (e.g. by samblaster)")
-
     return net, ref_lens
 
 def write_net_as_counts(net, outfile):

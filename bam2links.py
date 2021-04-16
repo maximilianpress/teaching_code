@@ -94,7 +94,7 @@ def parse_bam_to_link_counts(bamfiles, out_fmt="counts", mapq_filter=0):
                 if not are_paired:
                     raise ValueError("BAM file is not sorted by read name!! (samtools sort -n)")
                 if read.query_name != read1_id or mate != [read.reference_start, read.reference_id]:
-                    RuntimeError("BAM file is not sorted by read name!! (samtools sort -n). Alternately, filtering may have removed reads rather than read pairs?")
+                    raise RuntimeError("BAM file is not sorted by read name!! (samtools sort -n). Alternately, filtering may have removed reads rather than read pairs?")
 
     if not is_juicer:
         print("parsed {0} read pairs from file {1}, filtered out {2} on dupes and mapq".format(

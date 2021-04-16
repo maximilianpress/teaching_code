@@ -72,14 +72,14 @@ def parse_bam_to_link_counts(bamfiles, out_fmt="counts", mapq_filter=0):
                     # juicer short format is as follows:
                     # <str1> <chr1> <pos1> <frag1> <str2> <chr2> <pos2> <frag2>
                     line = "\t".join(
-                                     0 if not read.is_reverse else 1,  # strand
+                                     ["0" if not read.is_reverse else "1",  # strand
                                      ref1,
-                                     read.reference_start,
-                                     0,  # frag1
-                                     0 if not read.mate_is_reverse else 1,  # strand
+                                     str(read.reference_start),
+                                     "0",  # frag1
+                                     "0" if not read.mate_is_reverse else "1",  # strand
                                      ref2,
-                                     read.next_reference_start,
-                                     1,  # frag2
+                                     str(read.next_reference_start),
+                                     "1"]  # frag2
                                      )
                     print(line)
 
@@ -181,7 +181,7 @@ def main():
     elif c_args["out_fmt"] == "npy":
         write_net_as_npy(net=net, outfile=c_args["out_file"])
     if c_args["out_fmt"] == "juicer":
-
+        pass  # don't need to write this, going to STDOUT
 
 if __name__ == "__main__":
     main()

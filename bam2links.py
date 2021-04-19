@@ -63,14 +63,15 @@ def parse_bam_to_link_counts(bamfiles, out_fmt="counts", mapq_filter=0):
                 read1_id = read.query_name
                 # note that this does not account for mapq of mate read, which appears to be
                 # non-trivial to access in pysam (?). So adding iff mate also passes (below).
-                if read.is_duplicate or read.mapping_quality < mapq_filter:
-                    num_filtered += 1
-                    continue
                 mate = [read.next_reference_start, read.next_reference_id]
                 ref1 = refs[read.reference_id]
                 ref_lens[ref1] = lengths[read.reference_id]
                 ref2 = refs[read.next_reference_id]
                 ref_lens[ref2] = lengths[read.next_reference_id]
+
+                if read.is_duplicate or read.mapping_quality < mapq_filter:
+                    num_filtered += 1
+                    continue
                 if is_juicer:
                     # juicer short format is as follows:
                     # <str1> <chr1> <pos1> <frag1> <str2> <chr2> <pos2> <frag2>
@@ -95,8 +96,9 @@ def parse_bam_to_link_counts(bamfiles, out_fmt="counts", mapq_filter=0):
                 are_paired = read.query_name == read1_id
                 if not are_paired:
                     raise ValueError("BAM file is not sorted by read name!! (samtools sort -n)")
-                if read.query_name != read1_id or mate != [read.reference_start, read.reference_id]:
-                    raise RuntimeError("BAM file is not sorted by read name!! (samtools sort -n). Alternately, filtering may have removed reads rather than read pairs?")
+                if mate != [read.reference_start, read.reference_id]:
+                    raise RuntimeError("Mates don't match!! (samtools sort -n). Alternately, filtering may have removed reads rather than read pairs?\n"
+                                       "offending reads:", read1_id, read.query_name, mate, read.reference_start, read.reference_id)
 
                 # duplicating filter for forward read
                 if read.is_duplicate or read.mapping_quality < mapq_filter:
@@ -185,7 +187,7 @@ def main():
     c_args = parse_args()
     bams = c_args["bam_file"].split(",")
     net, ref_lens = parse_bam_to_link_counts(bams, c_args["out_fmt"], c_args["mapq_filter"])
-    print("writing out data")
+    #print("writing out data")
     if c_args["out_fmt"] == "counts":
         write_net_as_counts(net=net, outfile=c_args["out_file"])
     elif c_args["out_fmt"] == "index_counts":

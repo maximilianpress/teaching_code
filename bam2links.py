@@ -73,17 +73,22 @@ def parse_bam_to_link_counts(bamfiles, out_fmt="counts", mapq_filter=0):
                     num_filtered += 1
                     continue
                 if is_juicer:
-                    # juicer short format is as follows:
+                    # juicer short format is as follows, (doesn't work in 3d-dna):
                     # <str1> <chr1> <pos1> <frag1> <str2> <chr2> <pos2> <frag2>
+                    # juicer medium format is what we now target:
+                    #< readname > < str1 > < chr1 > < pos1 > < frag1 > < str2 > < chr2 > < pos2 > < frag2 > < mapq1 > < mapq2 >
                     juicer_line = "\t".join(
-                                     ["0" if not read.is_reverse else "1",  # strand
+                                     [read1_id,
+                                     "0" if not read.is_reverse else "1",  # strand
                                      ref1,
                                      str(read.reference_start),
                                      "0",  # frag1
                                      "0" if not read.mate_is_reverse else "1",  # strand
                                      ref2,
                                      str(read.next_reference_start),
-                                     "1"]  # frag2
+                                     "1", # frag2
+                                     str(read.mapping_quality)]  # read 1's MAPQ is second to last field
+                                     # mate's MAPQ is last field, added below
                                      )
 
                 if not is_juicer and num % 10000000 == 0:
@@ -104,11 +109,11 @@ def parse_bam_to_link_counts(bamfiles, out_fmt="counts", mapq_filter=0):
                 if read.is_duplicate or read.mapping_quality < mapq_filter:
                     num_filtered += 1
                     continue
-
                 # if BOTH reads pass the filter, then increment/print appropriately
                 net[ref1][ref2] += 1
                 net[ref2][ref1] += 1
                 if is_juicer:
+                    juicer_line += "\t" + str(read.mapping_quality)
                     print(juicer_line)
 
     if not is_juicer:

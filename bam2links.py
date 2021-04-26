@@ -134,7 +134,7 @@ def parse_bam_to_link_counts(bamfiles, out_fmt="counts", mapq_filter=0):
                 net[ref1][ref2] += 1
                 net[ref2][ref1] += 1
                 if is_juicer:
-                    juicer_line.replace("MAPQ2", str(read.mapping_quality))
+                    juicer_line = juicer_line.replace("MAPQ2", str(read.mapping_quality))
                     juicer_line += "\t" + str(read.query_name)
                     print(juicer_line)
 

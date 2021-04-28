@@ -75,25 +75,46 @@ def parse_bam_to_link_counts(bamfiles, out_fmt="counts", mapq_filter=0):
                 if is_juicer:
                     # juicer short format is as follows, (doesn't work in 3d-dna):
                     # <str1> <chr1> <pos1> <frag1> <str2> <chr2> <pos2> <frag2>
-                    # juicer medium format is what we now target:
+                    # juicer medium format is what once targeted:
                     #< readname > < str1 > < chr1 > < pos1 > < frag1 > < str2 > < chr2 > < pos2 > < frag2 > < mapq1 > < mapq2 >
+                    # juicer_line = "\t".join(
+                    #                  [read1_id,
+                    #                  "0" if not read.is_reverse else "1",  # strand
+                    #                  ref1,
+                    #                  str(read.reference_start),
+                    #                  "0",  # frag1
+                    #                  "0" if not read.mate_is_reverse else "1",  # strand
+                    #                  ref2,
+                    #                  str(read.next_reference_start),
+                    #                  "1", # frag2
+                    #                  str(read.mapping_quality)]  # read 1's MAPQ is second to last field
+                    #                  # mate's MAPQ is last field, added below
+                    #                  )
+                    # now targeting LONG format, which is what matlock does, which seems to work...
+                    # <str1> <chr1> <pos1> <frag1> <str2> <chr2> <pos2> <frag2> <mapq1> <cigar1> <sequence1> <mapq2> <cigar2> <sequence2> <readname1> <readname2>
                     juicer_line = "\t".join(
-                                     [read1_id,
-                                     "0" if not read.is_reverse else "1",  # strand
+                                     ["0" if not read.is_reverse else "1",  # strand1
                                      ref1,
                                      str(read.reference_start),
                                      "0",  # frag1
-                                     "0" if not read.mate_is_reverse else "1",  # strand
+                                     "0" if not read.mate_is_reverse else "1",  # strand2
                                      ref2,
                                      str(read.next_reference_start),
                                      "1", # frag2
-                                     str(read.mapping_quality)]  # read 1's MAPQ is second to last field
-                                     # mate's MAPQ is last field, added below
+                                     str(read.mapping_quality),  # mapq1
+                                     "-",  # CIGAR 1
+                                     "-",  # seq 1
+                                     "MAPQ2",  # mate's MAPQ , added below
+                                     "-",  # CIGAR 2
+                                     "-",  # seq 2
+                                     read1_id  # readname1
+                                     ]  # mate's id, readname2, is last field, added below
                                      )
+
 
                 if not is_juicer and num % 10000000 == 0:
                     print("parsed {0} reads from file {1}, {2} filtered out".format(
-                          num, bamfile, num_dupes)
+                          num, bamfile, num_filtered)
                           )
 
             else:
@@ -113,7 +134,8 @@ def parse_bam_to_link_counts(bamfiles, out_fmt="counts", mapq_filter=0):
                 net[ref1][ref2] += 1
                 net[ref2][ref1] += 1
                 if is_juicer:
-                    juicer_line += "\t" + str(read.mapping_quality)
+                    juicer_line = juicer_line.replace("MAPQ2", str(read.mapping_quality))
+                    juicer_line += "\t" + str(read.query_name)
                     print(juicer_line)
 
     if not is_juicer:

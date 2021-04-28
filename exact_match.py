@@ -164,7 +164,6 @@ def find_exact_matches(query_seq_file, ref_seq_file, should_rc=True):
                     find_pats(ref_str=ref_str, query_str=rc, query_id=query.id, seq_id=seq.id,
                               match_dict=match_dict, orientation="-")
 
-    ref.close()
     return match_dict
 
 def main():

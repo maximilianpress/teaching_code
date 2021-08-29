@@ -1,4 +1,6 @@
-# builds heavily upon previous answer, e.g. find_base_in_alignment()!
+#!/usr/bin/env python
+# builds heavily upon previous answer, e.g. find_base_in_alignment():
+# https://bioinformatics.stackexchange.com/questions/7401/access-base-aligned-to-particular-reference-position
 import sys
 import pysam
 from typing import Optional
@@ -46,6 +48,9 @@ def two_variant_cooccurrence(bam: pysam.AlignmentFile,
     ref_seq = ""
     
     for read in alns:
+      # simply exclude indel/gap reads
+      if "N" in read.cigar or "D" in read.cigar or "I" in read.cigar:
+          continue
       aln_pos = read.get_reference_positions()
       # not sure how this would happen but good to omit such just in case
       if not coord1 in aln_pos and coord2 in aln_pos:

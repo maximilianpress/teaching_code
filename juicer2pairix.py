@@ -65,7 +65,14 @@ def main():
                 print(process_line(line), file=out_file)
 
     if args.sort:
-        pass
+        print(
+            "to sort the output (NYI in this script), I suggest the following commands (linux):"
+            "# get header"
+            "grep '#' output_file.pairs > output_file.pairs.sorted"
+            "# sort output"
+            "LC_ALL=C sort -k2,2 -k3,3n -k4,4 -k5,5n --parallel=12 output_file.pairs \""
+            " >> output_file.pairs.sorted"
+        )
 
 
 if __name__ == "__main__":
